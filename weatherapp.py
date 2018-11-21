@@ -86,7 +86,6 @@ for char in rp5_page[rp5_teg_f_start:]:
 Cond
 """
 rp5_Cond_f = '<div class="cn3" onmouseover="tooltip(this,' + " '<b>"
-print(rp5_Cond_f)
 rp5_Cond_f_size = len(rp5_Cond_f)
 rp5_Cond_f_index = rp5_page.find(rp5_Cond_f)
 rp5_Cond_f_start = rp5_Cond_f_index + rp5_Cond_f_size
