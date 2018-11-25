@@ -107,3 +107,22 @@ print("Cond:            ", acco_Cond, "\n")
 print("rp5 for: ")  # , rp5_Current_city, "\n")
 print("Temperature:     ", rp5_teg, "\n")
 print("Cond:            ", rp5_Cond, "\n")
+
+def get_request_headers():
+    return {'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:63.0)'}
+
+
+def main():
+    """
+    main entry point
+    """
+    weather_sites={"AccuWeather": (ACCU_URL, ACCU_TEGS)}
+    for name in weather_sites:
+        url, tags = weather_sites[name]
+        content = ger_page_source(url)
+        temp, condition=get_weather_info(content, tags)
+        produce_output(name, temp, condition)
+
+
+if __name__ == '__main__':
+    main()
