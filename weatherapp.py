@@ -108,19 +108,26 @@ print("rp5 for: ")  # , rp5_Current_city, "\n")
 print("Temperature:     ", rp5_teg, "\n")
 print("Cond:            ", rp5_Cond, "\n")
 
+
 def get_request_headers():
     return {'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:63.0)'}
+
+
+def get_page_source(url):
+    request = Request(url, headers=get_request_headers())
+    page_source = urlopen(request).read()
+    return page_source.decode('utf-8')
 
 
 def main():
     """
     main entry point
     """
-    weather_sites={"AccuWeather": (ACCU_URL, ACCU_TEGS)}
+    weather_sites = {"AccuWeather": (ACCU_URL, ACCU_TEGS)}
     for name in weather_sites:
         url, tags = weather_sites[name]
-        content = ger_page_source(url)
-        temp, condition=get_weather_info(content, tags)
+        content = get_page_source(url)
+        temp, condition = get_weather_info(content, tags)
         produce_output(name, temp, condition)
 
 
