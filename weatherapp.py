@@ -6,8 +6,8 @@ from urllib.request import urlopen, Request
 import html
 
 ACCU_URL = "https://www.accuweather.com/ru/ua/vinnytsia/326175/weather-forecast/326175"
-ACCU_TEGS = ('<span class="large-temp">', '<span class="cond">')
-
+ACCU_TEGS = ('<span class="local-temp">', '<span class="cond">')
+tags_ad = ('')
 
 def get_request_headers():
     return {'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:63.0)'}
@@ -39,10 +39,20 @@ def get_tag_content(page_content, tag):
     return content
 
 
-def get_weather_info(page_content, tags):
+def get_weather_info(page_content, tags, *ttags_ad):
     """
     """
-    return tuple([get_tag_content(page_content, tag) for tag in tags])
+    tags1=[]
+    for tag in tags:
+        x = page_content.count(tag)
+        if x == 1:
+            tags1.append(tag)
+        else:
+            for ttags in ttags_ad:
+                tag1 = ttags + tag
+                tags1.append(tag1)
+        print(tags1)
+    return tuple([get_tag_content(page_content, tag) for tag in tags1])
 
 
 def produce_output(provider_name, temp, condition):
@@ -59,7 +69,7 @@ def main():
     for name in weather_sites:
         url, tags = weather_sites[name]
         content = get_page_source(url)
-        temp, condition = get_weather_info(content, tags)
+        temp, condition = get_weather_info(content, tags, tags_ad)
         produce_output(name, temp, condition)
 
 
