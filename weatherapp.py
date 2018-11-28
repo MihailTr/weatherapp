@@ -9,6 +9,14 @@ ACCU_URL = "https://www.accuweather.com/ru/ua/vinnytsia/326175/weather-forecast/
 ACCU_TEGS = ('<span class="local-temp">', '<span class="cond">')
 tags_ad = ('')
 
+RP5_URL = ('http://rp5.ua/%D0%9F%D0%BE%D0%B3%D0%BE%D0%B4%D0%B0_%D0%B2_%D0'
+           '%92%D0%B8%D0%BD%D0%BD%D0%B8%D1%86%D0%B5')
+rp5_Cond_f = '<div class="cn3" onmouseover="tooltip(this,' + " '<b>"
+RP5_TEGS = ('<div id="ArchTemp"><span class="t_0" style="display: block;">', rp5_Cond_f)
+
+RP5tags_ad = ('')
+
+
 def get_request_headers():
     return {'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:63.0)'}
 
@@ -42,6 +50,8 @@ def get_tag_content(page_content, tag):
 def get_weather_info(page_content, tags, *ttags_ad):
     """
     """
+    
+    
     tags1=[]
     for tag in tags:
         x = page_content.count(tag)
@@ -51,7 +61,6 @@ def get_weather_info(page_content, tags, *ttags_ad):
             for ttags in ttags_ad:
                 tag1 = ttags + tag
                 tags1.append(tag1)
-        print(tags1)
     return tuple([get_tag_content(page_content, tag) for tag in tags1])
 
 
@@ -65,11 +74,14 @@ def main():
     """
     main entry point
     """
-    weather_sites = {"AccuWeather": (ACCU_URL, ACCU_TEGS)}
+    weather_sites = {"AccuWeather": (ACCU_URL, ACCU_TEGS), "RP5": (RP5_URL, RP5_TEGS)}
     for name in weather_sites:
         url, tags = weather_sites[name]
         content = get_page_source(url)
-        temp, condition = get_weather_info(content, tags, tags_ad)
+        if weather_sites[name]=="AccuWeather":
+            temp, condition = get_weather_info(content, tags, tags_ad)
+        else:
+            temp, condition = get_weather_info(content, tags, RP5tags_ad)
         produce_output(name, temp, condition)
 
 
