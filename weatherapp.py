@@ -50,9 +50,8 @@ def get_tag_content(page_content, tag):
 def get_weather_info(page_content, tags, *ttags_ad):
     """
     """
-    
-    
-    tags1=[]
+
+    tags1 = []
     for tag in tags:
         x = page_content.count(tag)
         if x == 1:
@@ -78,7 +77,7 @@ def main():
     for name in weather_sites:
         url, tags = weather_sites[name]
         content = get_page_source(url)
-        if weather_sites[name]=="AccuWeather":
+        if weather_sites[name] == "AccuWeather":
             temp, condition = get_weather_info(content, tags, tags_ad)
         else:
             temp, condition = get_weather_info(content, tags, RP5tags_ad)
