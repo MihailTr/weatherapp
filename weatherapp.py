@@ -2,8 +2,11 @@
 """
 weatherapp.py
 """
-from urllib.request import urlopen, Request
+
+import sys
+import argparse
 import html
+from urllib.request import urlopen, Request
 
 ACCU_URL = "https://www.accuweather.com/ru/ua/vinnytsia/326175/weather-forecast/326175"
 ACCU_TEGS = ('<span class="local-temp">', '<span class="cond">')
@@ -12,7 +15,8 @@ tags_ad = ('')
 RP5_URL = ('http://rp5.ua/%D0%9F%D0%BE%D0%B3%D0%BE%D0%B4%D0%B0_%D0%B2_%D0'
            '%92%D0%B8%D0%BD%D0%BD%D0%B8%D1%86%D0%B5')
 rp5_Cond_f = '<div class="cn3" onmouseover="tooltip(this,' + " '<b>"
-RP5_TEGS = ('<div id="ArchTemp"><span class="t_0" style="display: block;">', rp5_Cond_f)
+RP5_TEGS = (
+    '<div id="ArchTemp"><span class="t_0" style="display: block;">', rp5_Cond_f)
 
 RP5tags_ad = ('')
 
@@ -69,11 +73,32 @@ def produce_output(provider_name, temp, condition):
     print(f'Condition: {condition}\n')
 
 
-def main():
+def main(argv):
     """
     main entry point
     """
-    weather_sites = {"AccuWeather": (ACCU_URL, ACCU_TEGS), "RP5": (RP5_URL, RP5_TEGS)}
+
+    KNOWN_COMMANDS = {'accu': 'AccuWeather', 'rp5': 'RP5'}
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument('command', help='Service name', nargs=1)
+    params = parser.parse_args(argv)
+
+    weather_sites = {
+        "AccuWeather": (ACCU_URL, ACCU_TEGS),
+        "RP5": (RP5_URL, RP5_TEGS)
+    }
+
+    if params.command:
+        command = params.command[0]
+        if command in KNOWN_COMMANDS:
+            weather_sites = {
+                KNOWN_COMMANDS[command]: weather_sites[KNOWN_COMMANDS[command]]
+            }
+        else:
+            print("Unknown command provider")
+            sys.exit(1)
+
     for name in weather_sites:
         url, tags = weather_sites[name]
         content = get_page_source(url)
@@ -85,4 +110,4 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    main(sys.argv[1:])
