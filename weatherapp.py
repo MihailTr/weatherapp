@@ -5,20 +5,16 @@ weatherapp.py
 
 import sys
 import argparse
+import re
+from bs4 import BeautifulSoup
 import html
 from urllib.request import urlopen, Request
 
-ACCU_URL = "https://www.accuweather.com/ru/ua/vinnytsia/326175/weather-forecast/326175"
-ACCU_TEGS = ('<span class="local-temp">', '<span class="cond">')
-tags_ad = ('')
+ACCU_URL = ("https://www.accuweather.com/ru/ua/vinnytsia/326175/weather"
+            "-forecast/326175")
 
 RP5_URL = ('http://rp5.ua/%D0%9F%D0%BE%D0%B3%D0%BE%D0%B4%D0%B0_%D0%B2_%D0'
            '%92%D0%B8%D0%BD%D0%BD%D0%B8%D1%86%D0%B5')
-rp5_Cond_f = '<div class="cn3" onmouseover="tooltip(this,' + " '<b>"
-RP5_TEGS = (
-    '<div id="ArchTemp"><span class="t_0" style="display: block;">', rp5_Cond_f)
-
-RP5tags_ad = ('')
 
 
 def get_request_headers():
@@ -31,46 +27,68 @@ def get_page_source(url):
     return page_source.decode('utf-8')
 
 
-def get_tag_content(page_content, tag):
-    """
-
-    :param page_content:
-    :param tag:
-    :return:
-    """
-    tag_index = page_content.find(tag)
-    tag_size = len(tag)
-    value_start = tag_index + tag_size
-
-    content = ''
-    for c in page_content[value_start:]:
-        if c != '<':
-            content += c
-        else:
-            break
-    return content
-
-
-def get_weather_info(page_content, tags, *ttags_ad):
+def get_weather_info(name, page_content):
     """
     """
+    if name == "AccuWeather":
+        city_page = BeautifulSoup(page_content, 'html.parser')
+        current_day_selection = city_page.find(
+            'li', class_=re.compile('(day|night) current first cl'))
 
-    tags1 = []
-    for tag in tags:
-        x = page_content.count(tag)
-        if x == 1:
-            tags1.append(tag)
-        else:
-            for ttags in ttags_ad:
-                tag1 = ttags + tag
-                tags1.append(tag1)
-    return tuple([get_tag_content(page_content, tag) for tag in tags1])
+        weather_info = {}
+        if current_day_selection:
+            current_day_url = current_day_selection.find('a').attrs['href']
+            if current_day_url:
+                current_day_page = get_page_source(current_day_url)
+                if current_day_page:
+                    current_day = \
+                        BeautifulSoup(current_day_page, 'html.parser')
+                    weather_details = \
+                        current_day.find('div', attrs={'id': 'detail-now'})
+                    condition = weather_details.find('span', class_='cond')
+                    if condition:
+                        weather_info['cond'] = condition.text
+                    temp = weather_details.find('span', class_='large-temp')
+                    if temp:
+                        weather_info['temp'] = temp.text
+                    feal_temp = weather_details.find('span',
+                                                     class_='small-temp')
+                    if feal_temp:
+                        weather_info['feal_temp'] = feal_temp.text
+                    wind_info = weather_details.find_all('li', class_='wind')
+                    if wind_info:
+                        weather_info['wind'] = \
+                            ' '.join(map(lambda t: t.text.strip(), wind_info))
+
+    if name == "RP5":
+        city_page = BeautifulSoup(page_content, 'html.parser')
+        current_day_rp5 = city_page.find('div', attrs={'id': 'content'})
+
+        weather_info = {}
+        temp_rp5 = current_day_rp5.find('div', attrs={'id': 'ArchTemp'})
+        temp_rp5 = temp_rp5.find('span', class_='t_0')
+        if temp_rp5:
+            weather_info['temp'] = temp_rp5.text
+        feal_temp_rp5 = current_day_rp5.find('div', class_='ArchiveTempFeeling')
+        for span in feal_temp_rp5.find_all('span', {'class': 't_1'}):
+            span.decompose()
+        if feal_temp_rp5:
+            weather_info['feal_temp'] = feal_temp_rp5.text
+        feal_info_rp5 = current_day_rp5.find('div', class_='ArchiveInfo')
+        for span in feal_info_rp5.find_all('span', {'class': 't_1'}):
+            span.decompose()
+        for span in feal_info_rp5.find_all(
+                'span', {'class': re.compile('wv_(1|2|3|4)')}):
+            span.decompose()
+        if feal_info_rp5:
+            weather_info['Info'] = feal_info_rp5.text
+    return weather_info
 
 
-def produce_output(provider_name, temp, condition):
+def produce_output(provider_name, info):
     print((f'\n {provider_name}'))
-    print(f'Temperature: {html.unescape(temp)}\n')
-    print(f'Condition: {condition}\n')
+    for key, value in info.items():
+        print(f'{key}: {html.unescape(value)}')
 
 
 def main(argv):
@@ -85,8 +103,8 @@ def main(argv):
     params = parser.parse_args(argv)
 
     weather_sites = {
-        "AccuWeather": (ACCU_URL, ACCU_TEGS),
-        "RP5": (RP5_URL, RP5_TEGS)
+        "AccuWeather": (ACCU_URL),
+        "RP5": (RP5_URL)
     }
 
     if params.command:
@@ -100,13 +118,9 @@ def main(argv):
             sys.exit(1)
 
     for name in weather_sites:
-        url, tags = weather_sites[name]
+        url = weather_sites[name]
         content = get_page_source(url)
-        if weather_sites[name] == "AccuWeather":
-            temp, condition = get_weather_info(content, tags, tags_ad)
-        else:
-            temp, condition = get_weather_info(content, tags, RP5tags_ad)
-        produce_output(name, temp, condition)
+        produce_output(name, get_weather_info(name, content))
 
 
 if __name__ == '__main__':
